@@ -16,9 +16,9 @@ setwd("~/GitHub/kaggle-allstate-predictor")
 
 # Import Data
 sampleSubmission <- read.csv("~/GitHub/kaggle-allstate-predictor/sampleSubmission.csv")
-test <- read.csv("~/GitHub/kaggle-allstate-predictor/test_v2.csv")
+test <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/test_v2.csv")
 #test <- read.csv("~/GitHub/kaggle-allstate-predictor/test.csv")
-train <- read.csv("~/GitHub/kaggle-allstate-predictor/train.csv")
+train <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/train.csv")
 
 # head(sampleSubmission, n=5)
 # head(test, n=5)
@@ -57,12 +57,12 @@ boxplot(train.selection$A ~ train.selection$car_age)
 qplot(car_value, data=train.selection, geom="histogram")
 qplot(risk_factor, data=train.selection, geom="histogram")
 qplot(married_couple, data=train.selection, geom="histogram")
-qplot(c_previous, data=train.selection, geom="histogram")
+qplot(C_previous, data=train.selection, geom="histogram")
 qplot(duration_previous, data=train.selection, geom="histogram")
 qplot(group_size, data=train.selection, geom="histogram")
+names(train.selection)
 
-
-training <- subset(train.selection, state == "IN")
+training <- subset(train.selection, C_previous == 4)
 training <- subset(train.selection, car_age  > 15)
 Aplot <- qplot(A,data=training, binwidth = 1, geom="histogram", na.rm=T)
 Bplot <- qplot(B,data=training, binwidth = 1, geom="histogram", na.rm=T)

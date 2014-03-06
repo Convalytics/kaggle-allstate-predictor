@@ -14,9 +14,9 @@ setwd("~/GitHub/kaggle-allstate-predictor")
 
 # Import Data
 sampleSubmission <- read.csv("~/GitHub/kaggle-allstate-predictor/sampleSubmission.csv")
-test <- read.csv("~/GitHub/kaggle-allstate-predictor/test_v2.csv")
-# test <- read.csv("~/GitHub/kaggle-allstate-predictor/test.csv")
-train <- read.csv("~/GitHub/kaggle-allstate-predictor/train.csv")
+test <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/test_v2.csv")
+#test <- read.csv("~/GitHub/kaggle-allstate-predictor/test.csv")
+#train <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/train.csv")
 
 # head(sampleSubmission, n=5)
 # head(test, n=5)
@@ -52,13 +52,24 @@ sub$D[sub$state == "GA" & sub$D < 2] <- 2
 sub$A[sub$car_age > 15 & sub$A != 0 & sub$A != 1] <- 0
 sub$E[sub$car_age > 15 & sub$E != 0] <- 0
 sub$F[sub$car_age > 15 & sub$F == 3] <- 0
+
+# C_previous
+sub$C[sub$C_previous == 1 & sub$C == 4] <- 1
+sub$C[sub$C_previous == 2 & sub$C == 4] <- 2
+sub$C[sub$C_previous == 3 & sub$C == 4] <- 3
+sub$D[sub$C_previous == 3 & sub$D == 1] <- 3
+sub$D[sub$C_previous == 4 & sub$D == 1] <- 3
+
+
+
+
 ##################################################################################
 
 # Build submission file.
 sub$plan <- paste0( sub[,18],sub[,19],sub[,20],sub[,21],sub[,22],sub[,23],sub[,24] )
 
 lastQuote <- sub[,c]
-write.csv(sub[,c(1,ncol(sub))],paste0('convalytics_allstate_9.csv'),quote=FALSE , row.names = FALSE )
+write.csv(sub[,c(1,ncol(sub))],paste0('convalytics_allstate_xx.csv'),quote=FALSE , row.names = FALSE )
 
 
 #############################################
