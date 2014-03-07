@@ -6,10 +6,13 @@
 #  Last Updated: 2/24/2014
 ######################################################
 
+
 # Load Packages
 library(plyr)
 library(ggplot2)
 library(gridExtra)
+library(qcc)    # for pareto.chart
+
 
 # Set Working Directory
 setwd("~/GitHub/kaggle-allstate-predictor")
@@ -49,21 +52,41 @@ grid.arrange(Aplot, Bplot,Cplot,Dplot,Eplot,Fplot,Gplot,ncol=4)
 
 
 # Look at distributions
+StateSummary <- data.frame(ddply(train.selection, "state", summarise, N = length(state)), stringsAsFactors=FALSE)
+StateSummary <- StateSummary[order(-StateSummary$N),]
+StateSummary$state <- factor(StateSummary$state, levels=StateSummary$state)
+StateSummary$cp <- cumsum(StateSummary$N)
+
+qplot(as.factor(state),N, data=StateSummary, geom="histogram", stat="identity")
+
+ggplot(StateSummary, aes(x=state)) + 
+  geom_bar(aes(y=N), fill="black", stat="identity") #+
+  #geom_point(aes(y=cp)) + 
+  #geom_path(aes(y=cp, group=1))
+  
+  
+
+
 qplot(state, data=train.selection, geom="histogram")
 qplot(group_size, data=train.selection, geom="histogram")
 qplot(homeowner, data=train.selection, geom="histogram")
 qplot(car_age, data=train.selection, binwidth = 10, geom="histogram")   # Car Age > 15 ... "A" from 2 to 0 ... E from 1 to 0. ...F could be changed from 3 down to 0.
-boxplot(train.selection$A ~ train.selection$car_age)
+qplot(age_oldest, data=train.selection, binwidth = 10, geom="histogram",color="gray")
+#boxplot(train.selection$A ~ train.selection$car_age)
 qplot(car_value, data=train.selection, geom="histogram")
 qplot(risk_factor, data=train.selection, geom="histogram")
 qplot(married_couple, data=train.selection, geom="histogram")
 qplot(C_previous, data=train.selection, geom="histogram")
 qplot(duration_previous, data=train.selection, geom="histogram")
 qplot(group_size, data=train.selection, geom="histogram")
+qplot(location, data=train.selection, binwidth = 1000, geom="histogram")
 names(train.selection)
 
-training <- subset(train.selection, C_previous == 4)
-training <- subset(train.selection, car_age  > 15)
+#training <- subset(train.selection, state == "NE")
+summary(train.selection$location)
+
+
+training <- subset(train.selection, E == 1)
 Aplot <- qplot(A,data=training, binwidth = 1, geom="histogram", na.rm=T)
 Bplot <- qplot(B,data=training, binwidth = 1, geom="histogram", na.rm=T)
 Cplot <- qplot(C,data=training, binwidth = 1, geom="histogram", na.rm=T)
@@ -73,3 +96,4 @@ Fplot <- qplot(F,data=training, binwidth = 1, geom="histogram", na.rm=T)
 Gplot <- qplot(G,data=training, binwidth = 1, geom="histogram", na.rm=T)
 
 grid.arrange(Aplot, Bplot,Cplot,Dplot,Eplot,Fplot,Gplot,ncol=4)
+
