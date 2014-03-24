@@ -27,20 +27,67 @@ train <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/train.csv")
 train.quotes <- subset(train, train$record_type == 0)
 train.selection <- subset(train, train$record_type == 1)
 
+### Subset train.quotes to get a list of "last quotes".
+train.lastQuote <- train.quotes[ !duplicated( train.quotes$customer_ID, fromLast=TRUE ) , ]
 
-# 
-# Aplot <- qplot(A,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# Bplot <- qplot(B,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# Cplot <- qplot(C,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# Dplot <- qplot(D,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# Eplot <- qplot(E,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# Fplot <- qplot(F,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# Gplot <- qplot(G,data=train.selection, binwidth = 1, geom="histogram", na.rm=T)
-# 
-# grid.arrange(Aplot, Bplot,Cplot,Dplot,Eplot,Fplot,Gplot,ncol=4)
-#ggplot(train.selection, aes(x=A, na.rm=T)) + geom_histogram(binwidth=1) 
+### Compare to train.selection to see how often each option is changed.
+### Merge. then compare.
+lastQuoteWithSelection <- merge(x = train.selection, y = train.lastQuote, by.x="customer_ID", by.y="customer_ID")
+lastQuoteWithSelection$Asame <- with(lastQuoteWithSelection, ifelse(A.x == A.y, 1,0))
+lastQuoteWithSelection$Bsame <- with(lastQuoteWithSelection, ifelse(B.x == B.y, 1,0))
+lastQuoteWithSelection$Csame <- with(lastQuoteWithSelection, ifelse(C.x == C.y, 1,0))
+lastQuoteWithSelection$Dsame <- with(lastQuoteWithSelection, ifelse(D.x == D.y, 1,0))
+lastQuoteWithSelection$Esame <- with(lastQuoteWithSelection, ifelse(E.x == E.y, 1,0))
+lastQuoteWithSelection$Fsame <- with(lastQuoteWithSelection, ifelse(F.x == F.y, 1,0))
+lastQuoteWithSelection$Gsame <- with(lastQuoteWithSelection, ifelse(G.x == G.y, 1,0))
+  
 
-#########################################################################################
+lastQuote.byState <- ddply(lastQuoteWithSelection, "state.x", summarise,
+                      count = length(customer_ID),
+                      allStay = length(subset(customer_ID, 
+                                              Asame==1 
+                                              & Bsame==1
+                                              & Csame==1
+                                              & Dsame==1
+                                              & Esame==1
+                                              & Fsame==1
+                                              & Gsame==1
+                                              )
+                                       ) / length(customer_ID),
+                      aStay = length(subset(Asame,Asame==1)) / length(Asame),
+                      bStay = length(subset(Bsame,Bsame==1)) / length(Bsame),
+                      cStay = length(subset(Csame,Csame==1)) / length(Csame),
+                      dStay = length(subset(Dsame,Dsame==1)) / length(Dsame),
+                      eStay = length(subset(Esame,Esame==1)) / length(Esame),
+                      fStay = length(subset(Fsame,Fsame==1)) / length(Fsame),
+                      gStay = length(subset(Gsame,Gsame==1)) / length(Gsame)
+                    )
+  
+lastQuote.byAll <- ddply(lastQuoteWithSelection, 
+                           c("state.x","married_couple.x","homeowner.x"),  
+                           summarise,
+                           count = length(customer_ID),
+                           allStay = length(subset(customer_ID, 
+                                                   Asame==1 
+                                                   & Bsame==1
+                                                   & Csame==1
+                                                   & Dsame==1
+                                                   & Esame==1
+                                                   & Fsame==1
+                                                   & Gsame==1
+                           )
+                           ) / length(customer_ID),
+                           aStay = length(subset(Asame,Asame==1)) / length(Asame),
+                           bStay = length(subset(Bsame,Bsame==1)) / length(Bsame),
+                           cStay = length(subset(Csame,Csame==1)) / length(Csame),
+                           dStay = length(subset(Dsame,Dsame==1)) / length(Dsame),
+                           eStay = length(subset(Esame,Esame==1)) / length(Esame),
+                           fStay = length(subset(Fsame,Fsame==1)) / length(Fsame),
+                           gStay = length(subset(Gsame,Gsame==1)) / length(Gsame)
+)
+
+
+
 #Get Overall Probabilities by Option ####################################################
 prob.overall <- data.frame(matrix(ncol = 22, nrow = 1))
 names(prob.overall) <- c("a0","a1","a2","b0","b1","c1","c2","c3","c4","d1","d2","d3","e0","e1","f0","f1","f2","f3","g1","g2","g3","g4")
@@ -215,6 +262,11 @@ prob.byCarValue <- ddply(train.selection, "car_value", summarise,
 )
 
 
+
+###########################################################################
+### Combine probabilities ###
+
+
 ###########################################################################
 write.csv(prob.byAll, file = "probabilities_byAll.csv", row.names=F)
 write.csv(prob.byState, file = "probabilities_byState.csv", row.names=F)
@@ -223,3 +275,36 @@ write.csv(prob.byCarValue, file = "probabilities_byCarValue.csv", row.names=F)
 
 #length(levels(as.factor(train.selection$cost)))
 #head(train.selection$location)
+
+field <- 2
+prob.byRisk[,paste("a", field,sep="")]
+
+
+trained <- merge(x = train.lastQuote, y = lastQuote.byAll, by.x=c("state","married_couple","homeowner"), by.y=c("state.x","married_couple.x","homeowner.x"))
+trained <- merge(x = trained, y = prob.byAll, by.x=c("state","married_couple","homeowner"), by.y=c("state","married_couple","homeowner"))
+trained$aFinal <- with(trained, ifelse(get(paste("a", A, sep="")) > (1-aStay), A, 
+                                       ifelse(a0 > a1 & a0 > a2,0,
+                                              ifelse(a1 > a0 & a1 > a2,1,
+                                                     ifelse(a2 > a0 & a2 > a1,2, A
+                                                     )))))
+trained$bFinal <- with(trained, ifelse(get(paste("b", B, sep="")) > (1-bStay), B, 
+                                       ifelse(b0 > b1,0,
+                                              ifelse(b1 > b0,1, B
+                                              ))))
+
+trained$cFinal <- with(trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C, 
+                                       ifelse(c1 > c2 & c1 > c3 & c1 > c4,8,
+                                              ifelse(c2 > c1 & c2 > c3 & c2 > c4,7,
+                                                     ifelse(c3 > c1 & c3 > c2 & c3 > c4,6,
+                                                            ifelse(c4 > c1 & c4 > c2 & c4 > c3,5,9
+                                              ))))))
+trained$cFinal <- with(trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C, which.max(c(c1,c2,c3,c4))))
+#trained$cFinal <- with(trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C,9))
+#subset(trained,cFinal == 9)
+#cpasted <- 
+#   with(trained, get(paste("c", C, sep="")))
+#with(trained, max.col(c(a0,a1,a2))-1)
+
+subset(trained, cFinal != C)
+
+write.csv(subset(trained, cFinal != C),file="trainedSample.csv",row.names=F)
