@@ -19,8 +19,7 @@ setwd("~/GitHub/kaggle-allstate-predictor")
 
 # Import Data
 sampleSubmission <- read.csv("~/GitHub/kaggle-allstate-predictor/sampleSubmission.csv")
-#test <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/test_v2.csv")
-#test <- read.csv("~/GitHub/kaggle-allstate-predictor/test.csv")
+test <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/test_v2.csv")
 train <- read.csv("~/GitHub/giantfiles/kaggle-allstate-predictor/train.csv")
 
 
@@ -29,7 +28,7 @@ train.selection <- subset(train, train$record_type == 1)
 
 ### Subset train.quotes to get a list of "last quotes".
 train.lastQuote <- train.quotes[ !duplicated( train.quotes$customer_ID, fromLast=TRUE ) , ]
-
+test.lastQuote <- test[ !duplicated( test$customer_ID, fromLast=TRUE ) , ]
 ### Compare to train.selection to see how often each option is changed.
 ### Merge. then compare.
 lastQuoteWithSelection <- merge(x = train.selection, y = train.lastQuote, by.x="customer_ID", by.y="customer_ID")
@@ -268,16 +267,16 @@ prob.byCarValue <- ddply(train.selection, "car_value", summarise,
 
 
 ###########################################################################
-write.csv(prob.byAll, file = "probabilities_byAll.csv", row.names=F)
-write.csv(prob.byState, file = "probabilities_byState.csv", row.names=F)
-write.csv(prob.byRisk, file = "probabilities_byRisk.csv", row.names=F)
-write.csv(prob.byCarValue, file = "probabilities_byCarValue.csv", row.names=F)
+# write.csv(prob.byAll, file = "probabilities_byAll.csv", row.names=F)
+# write.csv(prob.byState, file = "probabilities_byState.csv", row.names=F)
+# write.csv(prob.byRisk, file = "probabilities_byRisk.csv", row.names=F)
+# write.csv(prob.byCarValue, file = "probabilities_byCarValue.csv", row.names=F)
 
 #length(levels(as.factor(train.selection$cost)))
 #head(train.selection$location)
-
-field <- 2
-prob.byRisk[,paste("a", field,sep="")]
+# 
+# field <- 2
+# prob.byRisk[,paste("a", field,sep="")]
 
 
 trained <- merge(x = train.lastQuote, y = lastQuote.byAll, by.x=c("state","married_couple","homeowner"), by.y=c("state.x","married_couple.x","homeowner.x"))
@@ -293,18 +292,95 @@ trained$bFinal <- with(trained, ifelse(get(paste("b", B, sep="")) > (1-bStay), B
                                               ))))
 
 trained$cFinal <- with(trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C, 
-                                       ifelse(c1 > c2 & c1 > c3 & c1 > c4,8,
-                                              ifelse(c2 > c1 & c2 > c3 & c2 > c4,7,
-                                                     ifelse(c3 > c1 & c3 > c2 & c3 > c4,6,
-                                                            ifelse(c4 > c1 & c4 > c2 & c4 > c3,5,9
+                                       ifelse(c1 > c2 & c1 > c3 & c1 > c4,1,
+                                              ifelse(c2 > c1 & c2 > c3 & c2 > c4,2,
+                                                     ifelse(c3 > c1 & c3 > c2 & c3 > c4,3,
+                                                            ifelse(c4 > c1 & c4 > c2 & c4 > c3,4,C
                                               ))))))
-trained$cFinal <- with(trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C, which.max(c(c1,c2,c3,c4))))
-#trained$cFinal <- with(trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C,9))
-#subset(trained,cFinal == 9)
-#cpasted <- 
-#   with(trained, get(paste("c", C, sep="")))
-#with(trained, max.col(c(a0,a1,a2))-1)
 
-subset(trained, cFinal != C)
+trained$dFinal <- with(trained, ifelse(get(paste("d", D, sep="")) > (1-dStay), D, 
+                                       ifelse(d1 > d2 & d1 > d3,1,
+                                              ifelse(d2 > d1 & d2 > d3,2, 
+                                                     ifelse(d3 > d1 & d3 > d2,3, D
+                                              )))))
 
-write.csv(subset(trained, cFinal != C),file="trainedSample.csv",row.names=F)
+trained$eFinal <- with(trained, ifelse(get(paste("e", E, sep="")) > (1-eStay), E, 
+                                       ifelse(e0 > e1,0,
+                                              ifelse(e1 > e0,1, E
+                                              ))))
+
+trained$fFinal <- with(trained, ifelse(get(paste("f", F, sep="")) > (1-fStay), F, 
+                                       ifelse(f1 > f2 & f1 > f3,1,
+                                              ifelse(f2 > f1 & f2 > f3,2, 
+                                                     ifelse(f3 > f1 & f3 > f2,3, F
+                                                     )))))
+
+trained$gFinal <- with(trained, ifelse(get(paste("g", G, sep="")) > (1-gStay), G, 
+                                       ifelse(g1 > g2 & g1 > g3 & g1 > g4,1,
+                                              ifelse(g2 > g1 & g2 > g3 & g2 > g4,2,
+                                                     ifelse(g3 > g1 & g3 > g2 & g3 > g4,3,
+                                                            ifelse(g4 > g1 & g4 > g2 & g4 > g3,4,G
+                                                            ))))))
+
+######################################################################################################
+
+test.trained <- merge(x = test.lastQuote, y = lastQuote.byAll, by.x=c("state","married_couple","homeowner"), by.y=c("state.x","married_couple.x","homeowner.x"))
+test.trained <- merge(x = test.trained, y = prob.byAll, by.x=c("state","married_couple","homeowner"), by.y=c("state","married_couple","homeowner"))
+test.trained$aFinal <- with(test.trained, ifelse(get(paste("a", A, sep="")) > (1-aStay), A, 
+                                       ifelse(a0 > a1 & a0 > a2,0,
+                                              ifelse(a1 > a0 & a1 > a2,1,
+                                                     ifelse(a2 > a0 & a2 > a1,2, A
+                                                     )))))
+test.trained$bFinal <- with(test.trained, ifelse(get(paste("b", B, sep="")) > (1-bStay), B, 
+                                       ifelse(b0 > b1,0,
+                                              ifelse(b1 > b0,1, B
+                                              ))))
+
+test.trained$cFinal <- with(test.trained, ifelse(get(paste("c", C, sep="")) > (1-cStay), C, 
+                                       ifelse(c1 > c2 & c1 > c3 & c1 > c4,1,
+                                              ifelse(c2 > c1 & c2 > c3 & c2 > c4,2,
+                                                     ifelse(c3 > c1 & c3 > c2 & c3 > c4,3,
+                                                            ifelse(c4 > c1 & c4 > c2 & c4 > c3,4,C
+                                                            ))))))
+
+test.trained$dFinal <- with(test.trained, ifelse(get(paste("d", D, sep="")) > (1-dStay), D, 
+                                       ifelse(d1 > d2 & d1 > d3,1,
+                                              ifelse(d2 > d1 & d2 > d3,2, 
+                                                     ifelse(d3 > d1 & d3 > d2,3, D
+                                                     )))))
+
+test.trained$eFinal <- with(test.trained, ifelse(get(paste("e", E, sep="")) > (1-eStay), E, 
+                                       ifelse(e0 > e1,0,
+                                              ifelse(e1 > e0,1, E
+                                              ))))
+
+test.trained$fFinal <- with(test.trained, ifelse(get(paste("f", F, sep="")) > (1-fStay), F, 
+                                       ifelse(f1 > f2 & f1 > f3,1,
+                                              ifelse(f2 > f1 & f2 > f3,2, 
+                                                     ifelse(f3 > f1 & f3 > f2,3, F
+                                                     )))))
+
+test.trained$gFinal <- with(test.trained, ifelse(get(paste("g", G, sep="")) > (1-gStay), G, 
+                                       ifelse(g1 > g2 & g1 > g3 & g1 > g4,1,
+                                              ifelse(g2 > g1 & g2 > g3 & g2 > g4,2,
+                                                     ifelse(g3 > g1 & g3 > g2 & g3 > g4,3,
+                                                            ifelse(g4 > g1 & g4 > g2 & g4 > g3,4,G
+                                                            ))))))
+
+
+# Build submission file.
+test.trained$plan <- paste0( test.trained[,"aFinal"],
+                             test.trained[,"bFinal"],
+                             test.trained[,"cFinal"],
+                             test.trained[,"dFinal"],
+                             test.trained[,"eFinal"],
+                             test.trained[,"fFinal"],
+                             test.trained[,"gFinal"] )
+
+submission <- test.trained[,c("customer_ID","plan")]
+
+
+write.csv(submission, file = "convalytics_allstate_xx.csv", row.names=F)
+#subset(trained, cFinal != C)
+
+#write.csv(subset(trained, cFinal != C),file="trainedSample.csv",row.names=F)
